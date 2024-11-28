@@ -1,10 +1,5 @@
 '''
 --------------------------------------------------------------------------------
-Date Created:   04/06/2024
-Date Modified:  04/06/2024
-Version:        1.0
-Author:         Lino Mercado-Esquivias (lino.a.mercado@gmail.com)
-
 Description:    Color Macros
                 Supplementary file containing macros for text color using ANSI 
                 esccape sequences. To preview a limited selection of colors

