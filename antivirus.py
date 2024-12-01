@@ -20,12 +20,14 @@ Future Work:    1) Add more virus signatures to signature_scan() function.
 # modules
 import re
 import os
+import sys
 import glob
 import signal
 import platform
 import subprocess
 from colors import *
 from typing import List
+from time import sleep
 
 def main():
     # clear terminal
@@ -86,7 +88,8 @@ def print_program_description():
 # perform a scan for viruses
 def scan():
     # infected_files = signature_scan_directory('/')
-    infected_files = signature_scan_directory("/home/lino/Documents/ECE_4305/ECE4309_Final_Project")
+    current_directory = os.getcwd()
+    infected_files = signature_scan_directory(current_directory)
     clense_infected_files(infected_files)
     suspicious_files = heuristic_scan()
 
@@ -109,6 +112,9 @@ def signature_scan_directory(path) -> List[str]:
 
 # returns file path if file is infected; returns None otherwise
 def signature_scan_file(file):
+    # skip the virus itself
+    if file.endswith("self_replicating_virus.py"):
+        return None
     # read file
     file_is_infected = False
     with open(file, "r") as f:
@@ -130,10 +136,9 @@ def signature_scan_file(file):
 
 # clenses a list of infected files
 def clense_infected_files(infected_files):
+    infection_count = len(infected_files)
+    clense_count = 0
     for file in infected_files:
-        # don't clense the virus file itself
-        if file.endswith("self_replicating_virus.py"):
-            continue
         clensed_code = []
         # read file
         with open(file, "r") as f:
@@ -155,7 +160,20 @@ def clense_infected_files(infected_files):
         # clense file
         with open(file, "w") as f:
             f.writelines(clensed_code)
-            print(GREEN + f"File {file} has been clensed" + RESET)
+        clense_count += 1
+        print_progress_bar(clense_count, infection_count)
+        sleep(1)
+    print(BOLD + GREEN + f"\n{infection_count} files have been clensed" + RESET)
+
+# print progress bar showing clensing progress
+def print_progress_bar(iteration, total, length=50, fill='█'):
+    percent = f"{100 * (iteration / total):.1f}"
+    filled_length = int(length * iteration // total)
+    bar = fill * filled_length + '-' * (length - filled_length)
+    sys.stdout.write(f'\rProgress |{bar}| {percent}% Complete')
+    sys.stdout.flush()
+    if iteration == total:
+        sys.stdout.write('\n')
 
 # checks files for suspicious changes and returns a list of suspicious files
 def heuristic_scan() -> List[str]:
