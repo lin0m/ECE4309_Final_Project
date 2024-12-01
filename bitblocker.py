@@ -11,9 +11,8 @@ Description:    For a program description, run the program and select the
                 "program description" option.
 
 Future Work:    1) Add more virus signatures to signature_scan() function.
-                2) Finish heuristic scan function.
-                3) Add real_time_protection() function.
-                4) Scan portable executables not just python scripts.
+                2) Add real_time_protection() function.
+                3) Scan portable executables not just python scripts.
 --------------------------------------------------------------------------------
 '''
 
@@ -26,42 +25,59 @@ import signal
 import platform
 import subprocess
 from colors import *
-from typing import List
 from time import sleep
+from typing import List
 
 def main():
     # clear terminal
     clear_terminal = set_clear_command()
     os.system(clear_terminal)
+    
+    # variables
+    program_details = poll_git()
+    version = program_details[0]
+    date_modified = program_details[1]
+    root_directory = '/'
+    home_directory = os.path.expanduser("~")
+    documents_folder = os.path.join(home_directory, "Documents")
+    current_directory = os.getcwd()
 
     # main menu
     while True:
-        print("Welcome to BitBarrier. Select an option from below.")
-        print("1.    Print program description")
-        print("2.    Perform scan")
-        print("3.    Enable real-time protection")
+        print(f"Welcome to BitBarrier {version} ({date_modified} release). Select an option from below.")
+        print("1.    Scan current directory")
+        print("2.    Quick scan")
+        print("3.    Full scan")
+        print("4.    Enable real-time protection")
         print("q     Exit program")
         user_response = input("Please enter your selection: ")
         if user_response.strip() == '1':
             os.system(clear_terminal)
-            print_program_description()
+            scan(current_directory)
+            input()
             os.system(clear_terminal)
         elif user_response.strip() == '2':
             os.system(clear_terminal)
-            scan()
+            scan(documents_folder)
             input()
             os.system(clear_terminal)
         elif user_response.strip() == '3':
+            os.system(clear_terminal)
+            scan(root_directory)
+            input()
+            os.system(clear_terminal)
+        elif user_response.strip() == '4':
             os.system(clear_terminal)
             # real_time_protection()
         elif user_response.strip() == 'q':
             os.system(clear_terminal)
             print("Program ended.")
             exit(0)
+        else:
+            os.system(clear_terminal)
 
-# print program description
-def print_program_description():
-    # poll git details
+# poll git details
+def poll_git() -> List:
     date_crated = "2024-11-07"
     try:
         command = ["git", "log", "-1", "--format=%ad", "--date=short"]
@@ -73,31 +89,24 @@ def print_program_description():
         version = subprocess.check_output(command, text=True).strip()
     except subprocess.CalledProcessError:
         version = "unknown"
-
-    # print program description    
-    program_description = f"""
-    PROGRAM DESCRIPTION:    
-        BitBarrier {version} is a program that is meant to defend against 
-        our own virus as well as other publicly available viruses.
-        Date Created:   {date_crated}
-        Date Modified:  {date_modified}
-    """.strip()
-    print(program_description)
-    input("Press any key to continue... ")
+    return [version, date_modified, date_crated]
 
 # perform a scan for viruses
-def scan():
-    # infected_files = signature_scan_directory('/')
-    current_directory = os.getcwd()
-    infected_files = signature_scan_directory(current_directory)
+def scan(path):
+    # check if folder exists
+    if not os.path.isdir(path):
+        print(f"Could not scan {path}. Folder does not exist.")
+        return
+    
+    # perform scan
+    infected_files = signature_scan_directory(path)
     clense_infected_files(infected_files)
-    suspicious_files = heuristic_scan()
 
 # scans directory and returns a list of infected files
 def signature_scan_directory(path) -> List[str]:
     infected_files = []
 
-    # scan current directory
+    # recursivley scan all files and subdirectories inside the current directory
     for current_directory, subdirectories, files in os.walk(path):
 
         # scan files in current directory
@@ -117,8 +126,11 @@ def signature_scan_file(file):
         return None
     # read file
     file_is_infected = False
-    with open(file, "r") as f:
-        file_code = f.readlines()
+    try:
+        with open(file, "r") as f:
+            file_code = f.readlines()
+    except Exception as e:
+        return None
     
     # check for virus signatures
     for line in file_code:
@@ -140,6 +152,7 @@ def clense_infected_files(infected_files):
     clense_count = 0
     for file in infected_files:
         clensed_code = []
+
         # read file
         with open(file, "r") as f:
             file_code = f.readlines()
