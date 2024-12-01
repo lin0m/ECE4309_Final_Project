@@ -7,11 +7,12 @@ Group Members:  Jess Leal
                 Huaishu Huang
                 Lino Mercado-Esquivias
 
-Description:    For a program description, run the program and select the 
-                "program description" option.
+Description:    BitBlocker is an antivirus designed to fight the BitCrusher
+                virus.
 
 Future Work:    1) Add more virus signatures to signature_scan() function.
-                2) Add real_time_protection() function.
+                2) Real time protection can't detect virus pid because it's
+                   too fast. Fix this somehow.
                 3) Scan portable executables not just python scripts.
 --------------------------------------------------------------------------------
 '''
@@ -27,6 +28,7 @@ import subprocess
 from colors import *
 from time import sleep
 from typing import List
+from inotify_simple import INotify, flags
 
 def main():
     # clear terminal
@@ -68,7 +70,7 @@ def main():
             os.system(clear_terminal)
         elif user_response.strip() == '4':
             os.system(clear_terminal)
-            # real_time_protection()
+            real_time_protection(current_directory)
         elif user_response.strip() == 'q':
             os.system(clear_terminal)
             print("Program ended.")
@@ -122,7 +124,7 @@ def signature_scan_directory(path) -> List[str]:
 # returns file path if file is infected; returns None otherwise
 def signature_scan_file(file):
     # skip the virus itself
-    if file.endswith("self_replicating_virus.py"):
+    if file.endswith("bitcrusher.py"):
         return None
     # read file
     file_is_infected = False
@@ -189,14 +191,32 @@ def print_progress_bar(iteration, total, length=50, fill='█'):
         sys.stdout.write('\n')
 
 # checks files for suspicious changes and returns a list of suspicious files
-def heuristic_scan() -> List[str]:
-    suspicious_files = []
-    # iterate through all python programs in the current directory
-    current_directory_files = glob.glob("*.py")
-    for file in current_directory_files:
-        file_size = os.path.getsize(file)
-        date_modified = os.path.getmtime(file)
-    return suspicious_files
+def real_time_protection(path):
+    print("Running real time protection...")
+    inotify = INotify()
+    watch_flags = flags.ACCESS | flags.MODIFY | flags.CREATE | flags.DELETE
+    watch_descriptor = inotify.add_watch(path, watch_flags)
+
+    while True:
+        for event in inotify.read():
+            if event.mask & flags.MODIFY:
+                print(f"Modified file: {event.name}")
+                try:
+                    # Get the process interacting with the file using lsof
+                    pid_output = subprocess.check_output(["lsof", event.name]).decode().splitlines()
+                    
+                    if pid_output:  # If there's any output from lsof
+                        for line in pid_output:
+                            if "python" in line:  # Check if the process is related to Python
+                                print(f"Process modifying {event.name}: {line}")
+                    else:
+                        print(f"No processes are interacting with {event.name}")
+                except subprocess.CalledProcessError as e:
+                    # Handle case where no process is found
+                    print(f"No processes found for {event.name}. Error: {e}")
+                except Exception as e:
+                    # General error handling
+                    print(f"An error occurred: {e}")
 
 # set command to clear the terminal depending on the operating system
 def set_clear_command():

