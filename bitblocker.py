@@ -13,9 +13,7 @@ Description:    BitBlocker Antivirus
                 as well as real-time protection against active threats.
 
 Future Work:    1) Add more virus signatures to signature_scan() function.
-                2) Real time protection can't detect virus pid because it's
-                   too fast. Fix this somehow.
-                3) Scan portable executables not just python scripts.
+                2) Scan portable executables not just python scripts.
 --------------------------------------------------------------------------------
 '''
 
@@ -211,8 +209,6 @@ def real_time_protection(path):
                 continue
             if not event.name.endswith(".py"):
                 continue
-            print(RED + "\n------------------------------------------------------------------" + RESET)
-            print(f"Analyzing suspicious activity with file: \"{event.name}\"...")
             try:
                 # get the process modifying the file
                 pid_output = subprocess.check_output(["lsof", event.name]).decode().splitlines()
@@ -226,6 +222,8 @@ def real_time_protection(path):
                         file_type = fields[4]
                         if command != "python3" or file_type != "REG":
                             continue
+                        print(RED + "\n------------------------------------------------------------------" + RESET)
+                        print(f"Analyzing suspicious activity with file: \"{event.name}\"...")
                         print(f"Process modifying \"{event.name}\":\n{header}\n{line}")
                         try:
                             os.kill(int(pid), signal.SIGTERM)
@@ -236,8 +234,8 @@ def real_time_protection(path):
                             print(f"Not to worry, we'll get it next time.")
                             print(RED + "------------------------------------------------------------------\n" + RESET)
             except Exception as e:
-                # General error handling
-                print("False alarm. Continuing to monitor computer...")
+                # ignore errors: a lot of these occur from files being closed
+                pass
 
 
 # set command to clear the terminal depending on the operating system
