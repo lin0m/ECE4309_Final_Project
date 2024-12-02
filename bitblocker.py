@@ -7,8 +7,10 @@ Group Members:  Jess Leal
                 Huaishu Huang
                 Lino Mercado-Esquivias
 
-Description:    BitBlocker is an antivirus designed to fight the BitCrusher
-                virus.
+Description:    BitBlocker Antivirus
+                An antivirus that clenses infected python scripts of the
+                BitCrusher Virus. It can perform various types of scans
+                as well as real-time protection against active threats.
 
 Future Work:    1) Add more virus signatures to signature_scan() function.
                 2) Real time protection can't detect virus pid because it's
@@ -36,17 +38,22 @@ def main():
     os.system(clear_terminal)
     
     # variables
-    program_details = poll_git()
-    version = program_details[0]
-    date_modified = program_details[1]
     root_directory = '/'
     home_directory = os.path.expanduser("~")
     documents_folder = os.path.join(home_directory, "Documents")
     current_directory = os.getcwd()
-
+    if current_directory.endswith("ECE4309_Final_Project"):
+        program_details = poll_git()
+        version = program_details[0]
+        date_modified = program_details[1]
+    else:
+        print("Could not poll git details. Please change directory to the appropriate git directory.")
+        version = "unknown"
+        date_modified = "unknown"
+    
     # main menu
     while True:
-        print(f"Welcome to BitBarrier {version} ({date_modified} release). Select an option from below.")
+        print(f"Welcome to BitBlocker {version} ({date_modified} release). Select an option from below.")
         print("1.    Scan current directory")
         print("2.    Quick scan")
         print("3.    Full scan")
@@ -73,7 +80,7 @@ def main():
             real_time_protection(current_directory)
         elif user_response.strip() == 'q':
             os.system(clear_terminal)
-            print("Program ended.")
+            print("BitBlocker program ended.")
             exit(0)
         else:
             os.system(clear_terminal)
@@ -179,6 +186,7 @@ def clense_infected_files(infected_files):
         print_progress_bar(clense_count, infection_count)
         sleep(1)
     print(BOLD + GREEN + f"\n{infection_count} files have been clensed" + RESET)
+    print("Press any key to continue...")
 
 # print progress bar showing clensing progress
 def print_progress_bar(iteration, total, length=50, fill='█'):
@@ -192,31 +200,45 @@ def print_progress_bar(iteration, total, length=50, fill='█'):
 
 # checks files for suspicious changes and returns a list of suspicious files
 def real_time_protection(path):
-    print("Running real time protection...")
+    print(GREEN + "Running real time protection..." + RESET)
     inotify = INotify()
-    watch_flags = flags.ACCESS | flags.MODIFY | flags.CREATE | flags.DELETE
+    watch_flags = flags.ACCESS | flags.MODIFY
     watch_descriptor = inotify.add_watch(path, watch_flags)
 
     while True:
         for event in inotify.read():
-            if event.mask & flags.MODIFY:
-                print(f"Modified file: {event.name}")
-                try:
-                    # Get the process interacting with the file using lsof
-                    pid_output = subprocess.check_output(["lsof", event.name]).decode().splitlines()
-                    
-                    if pid_output:  # If there's any output from lsof
-                        for line in pid_output:
-                            if "python" in line:  # Check if the process is related to Python
-                                print(f"Process modifying {event.name}: {line}")
-                    else:
-                        print(f"No processes are interacting with {event.name}")
-                except subprocess.CalledProcessError as e:
-                    # Handle case where no process is found
-                    print(f"No processes found for {event.name}. Error: {e}")
-                except Exception as e:
-                    # General error handling
-                    print(f"An error occurred: {e}")
+            if not event.mask & flags.MODIFY:
+                continue
+            if not event.name.endswith(".py"):
+                continue
+            print(RED + "\n------------------------------------------------------------------" + RESET)
+            print(f"Analyzing suspicious activity with file: \"{event.name}\"...")
+            try:
+                # get the process modifying the file
+                pid_output = subprocess.check_output(["lsof", event.name]).decode().splitlines()
+                if pid_output:  # if any output from lsof
+                    header = pid_output[0]
+                    data_lines = pid_output[1:]
+                    for line in data_lines:
+                        fields = line.split()
+                        command = fields[0]
+                        pid = fields[1]
+                        file_type = fields[4]
+                        if command != "python3" or file_type != "REG":
+                            continue
+                        print(f"Process modifying \"{event.name}\":\n{header}\n{line}")
+                        try:
+                            os.kill(int(pid), signal.SIGTERM)
+                            print(f"Process {pid} terminated.")
+                            print(RED + "------------------------------------------------------------------\n" + RESET)
+                        except Exception as e:
+                            print(f"Could not kill virus with pid {pid}.", end=' ')
+                            print(f"Not to worry, we'll get it next time.")
+                            print(RED + "------------------------------------------------------------------\n" + RESET)
+            except Exception as e:
+                # General error handling
+                print("False alarm. Continuing to monitor computer...")
+
 
 # set command to clear the terminal depending on the operating system
 def set_clear_command():
@@ -229,7 +251,7 @@ def set_clear_command():
 def kill_signal_handler(signal_number, frame):
     clear_terminal = set_clear_command()
     os.system(clear_terminal)
-    print("Program ended.")
+    print("BitBlocker program ended.")
     exit(0)
 
 signal.signal(signal.SIGINT, kill_signal_handler)

